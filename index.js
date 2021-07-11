@@ -1,3 +1,7 @@
+require('dotenv').config()
+
+const Person = require('./models/person')
+
 const PORT = process.env.PORT || 3001
 const BASE_URL = '/api/persons'
 
@@ -40,28 +44,36 @@ let persons = [
 ]
 
 app.get(BASE_URL,(request,reponse)=>{
-  reponse.json(persons)
+  Person.find({}).then(persons=>{
+    reponse.json(persons)
+  })
 })
 
 app.get('/info',(request,reponse)=>{
-  const info = `<p>Phonebook has infor for ${persons.length} people</p>
-  <p>${new Date}</p>` 
+  Person.countDocuments({}).then(result=>{
 
-  reponse.send(info)
+    const info = `<p>Phonebook has infor for ${result} people</p>
+    <p>${new Date}</p>` 
+  
+    reponse.send(info)
+  })
 })
 
 app.get(`${BASE_URL}/:id`,(request,response)=>{
-  const id = Number(request.params.id)
   
-  const person = persons.find(person=>person.id === id)
-
-  if(person)
-  {
-    response.json(person)
-  }
-  else{
-    response.status(404).end()
-  }
+  Person.findById(request.params.id).then(person=>{
+    if(person)
+    {
+      response.json(person)
+    }
+    else{
+      response.status(404).end()
+    }
+  }).catch(error=>{
+    console.log(`error fetching person by id ${error}`)
+    response.status(500).end()
+  })
+  
 })
 
 app.delete(`${BASE_URL}/:id`,(request,response)=>{
