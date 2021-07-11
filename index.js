@@ -14,7 +14,7 @@ app.use(cors())
 app.use(express.json())
 app.use(express.static('build'))
 
-morgan.token('reqBody', (req, res) => JSON.stringify(req.body))
+morgan.token('reqBody', (req) => JSON.stringify(req.body))
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :reqBody'))
 
@@ -22,23 +22,23 @@ app.get(BASE_URL, (request, reponse, next) => {
   Person.find({}).then(persons => {
     reponse.json(persons)
   })
-  .catch(error=>{
-    next(error)
-  })
+    .catch(error => {
+      next(error)
+    })
 })
 
 app.get('/info', (request, reponse, next) => {
   Person.countDocuments({})
-  .then(result => {
+    .then(result => {
 
-    const info = `<p>Phonebook has infor for ${result} people</p>
+      const info = `<p>Phonebook has infor for ${result} people</p>
     <p>${new Date}</p>`
 
-    reponse.send(info)
-  })
-  .catch(error=>{
-    next(error)
-  })
+      reponse.send(info)
+    })
+    .catch(error => {
+      next(error)
+    })
 })
 
 app.get(`${BASE_URL}/:id`, (request, response, next) => {
@@ -51,9 +51,9 @@ app.get(`${BASE_URL}/:id`, (request, response, next) => {
       response.status(404).end()
     }
   })
-  .catch(error => {
-    next(error)
-  })
+    .catch(error => {
+      next(error)
+    })
 
 })
 
@@ -66,11 +66,11 @@ app.put(`${BASE_URL}/:id`, (request, response, next) => {
     number: body.number,
   }
 
-  Person.findByIdAndUpdate(request.params.id, person, {new:true, runValidators: true })
+  Person.findByIdAndUpdate(request.params.id, person, { new:true, runValidators: true })
     .then(updatedPerson => {
       response.json(updatedPerson)
     })
-    .catch(error=>{
+    .catch(error => {
       next(error)
     })
 })
@@ -78,12 +78,12 @@ app.put(`${BASE_URL}/:id`, (request, response, next) => {
 app.delete(`${BASE_URL}/:id`, (request, response, next) => {
 
   Person.findByIdAndDelete(request.params.id)
-    .then(result => {
+    .then(() => {
       response.status(204).end()
     })
-  .catch(error=>{
-    next(error)
-  })
+    .catch(error => {
+      next(error)
+    })
 
 })
 
@@ -96,12 +96,12 @@ app.post(BASE_URL, (request, response, next) => {
   })
 
   person.save()
-  .then(savedPerson => {
-    response.json(savedPerson)
-  })
-  .catch(error=>{
-    next(error)
-  })
+    .then(savedPerson => {
+      response.json(savedPerson)
+    })
+    .catch(error => {
+      next(error)
+    })
 })
 
 const unknownEndpoint = (request, response) => {
@@ -117,8 +117,8 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).send({ error: 'malformatted id' })
   }
   else if(error.name === 'ValidationError'){
-    return response.status(400).send({ error: error.message})
-  } 
+    return response.status(400).send({ error: error.message })
+  }
 
   next(error)
 }
@@ -126,6 +126,6 @@ const errorHandler = (error, request, response, next) => {
 app.use(errorHandler)
 
 app.listen(PORT, () => {
-  console.log(`server running on port ${PORT}`);
+  console.log(`server running on port ${PORT}`)
 })
 
