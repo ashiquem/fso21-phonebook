@@ -18,48 +18,30 @@ morgan.token('reqBody', (req, res) => JSON.stringify(req.body))
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :reqBody'))
 
-const generateId = () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
-
-let persons = [
-  {
-    name: "Arto Hellas",
-    number: "040-123456",
-    id: 1
-  },
-  {
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-    id: 2
-  },
-  {
-    name: "Dan Abramov ",
-    number: "12-43-234345",
-    id: 3
-  },
-  {
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-    id: 4
-  }
-]
-
-app.get(BASE_URL, (request, reponse) => {
+app.get(BASE_URL, (request, reponse, next) => {
   Person.find({}).then(persons => {
     reponse.json(persons)
   })
+  .catch(error=>{
+    next(error)
+  })
 })
 
-app.get('/info', (request, reponse) => {
-  Person.countDocuments({}).then(result => {
+app.get('/info', (request, reponse, next) => {
+  Person.countDocuments({})
+  .then(result => {
 
     const info = `<p>Phonebook has infor for ${result} people</p>
     <p>${new Date}</p>`
 
     reponse.send(info)
   })
+  .catch(error=>{
+    next(error)
+  })
 })
 
-app.get(`${BASE_URL}/:id`, (request, response) => {
+app.get(`${BASE_URL}/:id`, (request, response, next) => {
 
   Person.findById(request.params.id).then(person => {
     if (person) {
@@ -68,14 +50,14 @@ app.get(`${BASE_URL}/:id`, (request, response) => {
     else {
       response.status(404).end()
     }
-  }).catch(error => {
-    console.log(`error fetching person by id ${error}`)
-    response.status(500).end()
+  })
+  .catch(error => {
+    next(error)
   })
 
 })
 
-app.put(`${BASE_URL}/:id`, (request, response) => {
+app.put(`${BASE_URL}/:id`, (request, response, next) => {
 
   const body = request.body
 
@@ -91,21 +73,24 @@ app.put(`${BASE_URL}/:id`, (request, response) => {
       console.log(`error updating person ${error}`)
       response.status(500).end()
     })
+    .catch(error=>{
+      next(error)
+    })
 })
 
-app.delete(`${BASE_URL}/:id`, (request, response) => {
+app.delete(`${BASE_URL}/:id`, (request, response, next) => {
 
   Person.findByIdAndDelete(request.params.id)
     .then(result => {
       response.status(204).end()
     })
   .catch(error=>{
-    console.log(error)
+    next(error)
   })
 
 })
 
-app.post(BASE_URL, (request, response) => {
+app.post(BASE_URL, (request, response, next) => {
   const body = request.body
   const errors = validateRequest(body)
 
@@ -120,8 +105,12 @@ app.post(BASE_URL, (request, response) => {
     number: body.number,
   })
 
-  person.save().then(savedPerson => {
+  person.save()
+  .then(savedPerson => {
     response.json(savedPerson)
+  })
+  .catch(error=>{
+    next(error)
   })
 })
 
@@ -143,6 +132,24 @@ const validateRequest = (requestBody) => {
 
   return errorMessage.join(';')
 }
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  } 
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 app.listen(PORT, () => {
   console.log(`server running on port ${PORT}`);
