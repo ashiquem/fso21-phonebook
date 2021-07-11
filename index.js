@@ -66,12 +66,9 @@ app.put(`${BASE_URL}/:id`, (request, response, next) => {
     number: body.number,
   }
 
-  Person.findByIdAndUpdate(request.params.id, person, {new:true})
+  Person.findByIdAndUpdate(request.params.id, person, {new:true, runValidators: true })
     .then(updatedPerson => {
       response.json(updatedPerson)
-    }).catch(error => {
-      console.log(`error updating person ${error}`)
-      response.status(500).end()
     })
     .catch(error=>{
       next(error)
@@ -92,13 +89,6 @@ app.delete(`${BASE_URL}/:id`, (request, response, next) => {
 
 app.post(BASE_URL, (request, response, next) => {
   const body = request.body
-  const errors = validateRequest(body)
-
-  if (errors) {
-    return response.status(400).json({
-      error: errors
-    })
-  }
 
   const person = new Person({
     name: body.name,
@@ -114,25 +104,6 @@ app.post(BASE_URL, (request, response, next) => {
   })
 })
 
-const validateRequest = (requestBody) => {
-  const errorMessage = []
-  const hasName = requestBody.name
-  const hasNumber = requestBody.number
-
-  if (!hasName) {
-    errorMessage.push('name must be specified')
-  }
-  if (!hasNumber) {
-    errorMessage.push('number must be specified')
-  }
-  // if(hasName && hasNumber && persons.find(person => person.name === requestBody.name))
-  // {
-  //   errorMessage.push('name must be unique')
-  // }
-
-  return errorMessage.join(';')
-}
-
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
 }
@@ -144,6 +115,9 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
+  }
+  else if(error.name === 'ValidationError'){
+    return response.status(400).send({ error: error.message})
   } 
 
   next(error)
