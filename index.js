@@ -14,11 +14,11 @@ app.use(cors())
 app.use(express.json())
 app.use(express.static('build'))
 
-morgan.token('reqBody',(req,res)=> JSON.stringify(req.body))
+morgan.token('reqBody', (req, res) => JSON.stringify(req.body))
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :reqBody'))
 
-const generateId = () => Math.floor(Math.random()*Number.MAX_SAFE_INTEGER) 
+const generateId = () => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)
 
 let persons = [
   {
@@ -43,41 +43,40 @@ let persons = [
   }
 ]
 
-app.get(BASE_URL,(request,reponse)=>{
-  Person.find({}).then(persons=>{
+app.get(BASE_URL, (request, reponse) => {
+  Person.find({}).then(persons => {
     reponse.json(persons)
   })
 })
 
-app.get('/info',(request,reponse)=>{
-  Person.countDocuments({}).then(result=>{
+app.get('/info', (request, reponse) => {
+  Person.countDocuments({}).then(result => {
 
     const info = `<p>Phonebook has infor for ${result} people</p>
-    <p>${new Date}</p>` 
-  
+    <p>${new Date}</p>`
+
     reponse.send(info)
   })
 })
 
-app.get(`${BASE_URL}/:id`,(request,response)=>{
-  
-  Person.findById(request.params.id).then(person=>{
-    if(person)
-    {
+app.get(`${BASE_URL}/:id`, (request, response) => {
+
+  Person.findById(request.params.id).then(person => {
+    if (person) {
       response.json(person)
     }
-    else{
+    else {
       response.status(404).end()
     }
-  }).catch(error=>{
+  }).catch(error => {
     console.log(`error fetching person by id ${error}`)
     response.status(500).end()
   })
-  
+
 })
 
-app.put(`${BASE_URL}/:id`,(request,response)=>{
-  
+app.put(`${BASE_URL}/:id`, (request, response) => {
+
   const body = request.body
 
   const person = {
@@ -86,54 +85,55 @@ app.put(`${BASE_URL}/:id`,(request,response)=>{
   }
 
   Person.findByIdAndUpdate(request.params.id, person)
-  .then(updatedPerson=>{
+    .then(updatedPerson => {
       response.json(updatedPerson)
-  }).catch(error=>{
-    console.log(`error updating person ${error}`)
-    response.status(500).end()
+    }).catch(error => {
+      console.log(`error updating person ${error}`)
+      response.status(500).end()
+    })
+})
+
+app.delete(`${BASE_URL}/:id`, (request, response) => {
+
+  Person.findByIdAndDelete(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+  .catch(error=>{
+    console.log(error)
   })
-})
-
-app.delete(`${BASE_URL}/:id`,(request,response)=>{
-  const id = Number(request.params.id)
-  persons = persons.filter(person=>person.id !== id)
-
-  response.status(204).end()
 
 })
 
-app.post(BASE_URL,(request,response)=>{
+app.post(BASE_URL, (request, response) => {
   const body = request.body
   const errors = validateRequest(body)
 
   if (errors) {
-    return response.status(400).json({ 
-      error: errors 
+    return response.status(400).json({
+      error: errors
     })
   }
 
   const person = new Person({
     name: body.name,
-    number: body.number ,
-  }) 
+    number: body.number,
+  })
 
-  person.save().then(savedPerson=>{
+  person.save().then(savedPerson => {
     response.json(savedPerson)
   })
 })
 
-const validateRequest = (requestBody) => 
-{
+const validateRequest = (requestBody) => {
   const errorMessage = []
   const hasName = requestBody.name
   const hasNumber = requestBody.number
 
-  if(!hasName)
-  {
+  if (!hasName) {
     errorMessage.push('name must be specified')
   }
-  if(!hasNumber)
-  {
+  if (!hasNumber) {
     errorMessage.push('number must be specified')
   }
   // if(hasName && hasNumber && persons.find(person => person.name === requestBody.name))
@@ -144,8 +144,7 @@ const validateRequest = (requestBody) =>
   return errorMessage.join(';')
 }
 
-app.listen(PORT,()=>
-{
+app.listen(PORT, () => {
   console.log(`server running on port ${PORT}`);
 })
 
