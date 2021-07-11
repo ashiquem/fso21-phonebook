@@ -76,6 +76,24 @@ app.get(`${BASE_URL}/:id`,(request,response)=>{
   
 })
 
+app.put(`${BASE_URL}/:id`,(request,response)=>{
+  
+  const body = request.body
+
+  const person = {
+    name: body.name,
+    number: body.number,
+  }
+
+  Person.findByIdAndUpdate(request.params.id, person)
+  .then(updatedPerson=>{
+      response.json(updatedPerson)
+  }).catch(error=>{
+    console.log(`error updating person ${error}`)
+    response.status(500).end()
+  })
+})
+
 app.delete(`${BASE_URL}/:id`,(request,response)=>{
   const id = Number(request.params.id)
   persons = persons.filter(person=>person.id !== id)
@@ -94,16 +112,14 @@ app.post(BASE_URL,(request,response)=>{
     })
   }
 
-  const person = {
+  const person = new Person({
     name: body.name,
     number: body.number ,
-    id: generateId(),
-  }
+  }) 
 
-  persons = persons.concat(person)
-
-  response.json(person)
-
+  person.save().then(savedPerson=>{
+    response.json(savedPerson)
+  })
 })
 
 const validateRequest = (requestBody) => 
@@ -120,10 +136,10 @@ const validateRequest = (requestBody) =>
   {
     errorMessage.push('number must be specified')
   }
-  if(hasName && hasNumber && persons.find(person => person.name === requestBody.name))
-  {
-    errorMessage.push('name must be unique')
-  }
+  // if(hasName && hasNumber && persons.find(person => person.name === requestBody.name))
+  // {
+  //   errorMessage.push('name must be unique')
+  // }
 
   return errorMessage.join(';')
 }
